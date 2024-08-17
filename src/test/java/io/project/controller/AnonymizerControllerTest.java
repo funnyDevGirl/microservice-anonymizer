@@ -1,122 +1,95 @@
 package io.project.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.test.web.client.ExpectedCount.once;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+
 import io.project.dto.tasks.TaskCreateDTO;
-import io.project.dto.tasks.TaskDTO;
 import io.project.dto.users.UserCreateDTO;
-import io.project.dto.users.UserDTO;
-import io.project.dto.userstasks.UserTaskDTO;
-import org.springframework.http.MediaType;
-import io.project.mapper.TaskMapper;
-import io.project.mapper.UserMapper;
-import io.project.model.Task;
-import io.project.model.User;
-import io.project.repository.TaskRepository;
-import io.project.repository.UserRepository;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.junit.jupiter.api.AfterEach;
+import io.project.service.AnonymizerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import static org.assertj.core.api.Assertions.assertThat;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestTemplate;
 
-
-@SpringBootTest
-@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class AnonymizerControllerTest {
 
     @Autowired
-    private UserRepository userRepository;
+    private AnonymizerService anonymizerService;
 
     @Autowired
-    private TaskRepository taskRepository;
+    private RestTemplate restTemplate;
 
-    @Autowired
-    private ObjectMapper om;
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private UserMapper userMapper;
-
-    @Autowired
-    private TaskMapper taskMapper;
-
-    private User testUser;
-
-    private Task testTask;
+    private MockRestServiceServer mockServer;
 
     @BeforeEach
-    public void setUp() {
-        UserCreateDTO userCreateDTO = new UserCreateDTO();
-        userCreateDTO.setFirstName("Aleksandr");
-        userCreateDTO.setLastName("Pushkin");
-        userCreateDTO.setEmail("ap@gmail.com");
-        userCreateDTO.setPassword("test_password");
-        testUser = userMapper.map(userCreateDTO);
-        userRepository.save(testUser);
-        System.out.println("User 1: " + testUser);
-
-        TaskCreateDTO taskCreateDTO = new TaskCreateDTO();
-        taskCreateDTO.setTitle("TestTitle");
-        taskCreateDTO.setContent("TestContent");
-        taskCreateDTO.setStatus("draft");
-        taskCreateDTO.setAssigneeId(testUser.getId());
-        testTask = taskMapper.map(taskCreateDTO);
-        taskRepository.save(testTask);
-        System.out.println("Task: " + testTask);
-
-        testUser.addTask(testTask);
-        userRepository.save(testUser);
-        System.out.println("User with tasks: " + testUser);
-    }
-
-    @AfterEach
-    public void clean() {
-        taskRepository.deleteAll();
-        userRepository.deleteAll();
+    public void setup() {
+        mockServer = MockRestServiceServer.createServer(restTemplate);
     }
 
     @Test
-    public void testUpdate() throws Exception {
-        UserDTO userDTO = userMapper.map(testUser);
-        TaskDTO taskDTO = taskMapper.map(testTask);
-        UserTaskDTO userTaskDTO = new UserTaskDTO();
-        userTaskDTO.setUserDTO(userDTO);
-        userTaskDTO.setTaskDTO(taskDTO);
+    public void testCreateUser() {
+        mockServer.expect(once(), requestTo("http://localhost:8080/create/user"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(
+                        "{\"firstName\":\"GeneratedFirstName\","
+                                + "\"lastName\":\"GeneratedLastName\","
+                                + "\"email\":\"UsersEmail@ya.ru\"}",
+                        MediaType.APPLICATION_JSON));
 
-        var request = put("/api/user/" + testUser.getId() + "/task/" + testTask.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(om.writeValueAsString(userTaskDTO));
+        UserCreateDTO userCreateDTO = anonymizerService.createUser();
+        assertThat(userCreateDTO).isNotNull();
+        assertThat(userCreateDTO.getFirstName()).isEqualTo("GeneratedFirstName");
 
-        mockMvc.perform(request)
-                .andExpect(status().isOk());
-
-        var user = userRepository.findByIdWithEagerUpload(testUser.getId()).orElseThrow();
-        var task = taskRepository.findById(testTask.getId()).orElseThrow();
-
-        assertThat(user.getFirstName()).isEqualTo(userTaskDTO.getUserDTO().getFirstName());
-        assertThat(user.getLastName()).isEqualTo("***");
-        assertThat(task.getName()).isEqualTo("***");
+        mockServer.verify();
     }
 
     @Test
-    public void testUpdateUserAndTask() throws Exception {
+    public void testCreateTask() {
+        mockServer.expect(once(), requestTo("http://localhost:8080/create/task"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(
+                        "{\"title\":\"GeneratedTitle\","
+                                + "\"content\":\"GeneratedContent\","
+                                + "\"status\":\"draft\"}",
+                        MediaType.APPLICATION_JSON));
 
-        mockMvc.perform(put("/api/user/" + testUser.getId() + "/task/" + testTask.getId()))
-                .andExpect(status().isOk());
+        TaskCreateDTO taskCreateDTO = anonymizerService.createTask();
+        assertThat(taskCreateDTO).isNotNull();
+        assertThat(taskCreateDTO.getTitle()).isEqualTo("GeneratedTitle");
 
-        User user = userRepository.findById(testUser.getId()).orElseThrow(
-                () -> new RuntimeException("User with id " + testUser.getId() + "not found"));
-        Task task = taskRepository.findById(testTask.getId()).orElseThrow(
-                () -> new RuntimeException("Task with id " + testTask.getId() + "not found"));
+        mockServer.verify();
+    }
 
-        assertThat(user.getLastName()).isEqualTo("***");
-        assertThat(task.getName()).isEqualTo("***");
+    @Test
+    public void testUpdateUserAndTask() {
+        Long userId = 1L;
+        Long taskId = 1L;
+
+        mockServer.expect(once(), requestTo("http://localhost:8080/users/" + userId))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{\"id\":1,\"lastName\":\"UserLastName\"}",
+                        MediaType.APPLICATION_JSON));
+
+        mockServer.expect(once(), requestTo("http://localhost:8080/tasks/" + taskId))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{\"id\":1,\"title\":\"TaskTitle\"}",
+                        MediaType.APPLICATION_JSON));
+
+        mockServer.expect(once(), requestTo("http://localhost:8080/update/usertask"))
+                .andExpect(method(PUT))
+                .andRespond(withSuccess());
+
+        anonymizerService.updateUserAndTask(userId, taskId);
+
+        mockServer.verify();
     }
 }

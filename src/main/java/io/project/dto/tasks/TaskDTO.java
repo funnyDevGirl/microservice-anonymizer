@@ -11,7 +11,6 @@ import lombok.Setter;
 public class TaskDTO {
 
     private long id;
-
     private Integer index;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
@@ -21,8 +20,6 @@ public class TaskDTO {
     private long assigneeId;
 
     private String title;
-
     private String content;
-
     private String status;
 }
