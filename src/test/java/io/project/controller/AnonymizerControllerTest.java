@@ -3,8 +3,7 @@ package io.project.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.test.web.client.ExpectedCount.once;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import io.project.dto.tasks.TaskCreateDTO;
@@ -74,18 +73,24 @@ public class AnonymizerControllerTest {
         Long userId = 1L;
         Long taskId = 1L;
 
+        // Настройка mock-сервера для получения пользователя
         mockServer.expect(once(), requestTo("http://localhost:8080/users/" + userId))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess("{\"id\":1,\"lastName\":\"UserLastName\"}",
                         MediaType.APPLICATION_JSON));
 
+        // Настройка mock-сервера для получения задачи
         mockServer.expect(once(), requestTo("http://localhost:8080/tasks/" + taskId))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess("{\"id\":1,\"title\":\"TaskTitle\"}",
                         MediaType.APPLICATION_JSON));
 
+        // Настройка mock-сервера для обновления usertask
         mockServer.expect(once(), requestTo("http://localhost:8080/update/usertask"))
                 .andExpect(method(PUT))
+                .andExpect(content().json(
+                        "{\"userDTO\":{\"id\":1,\"lastName\":\"***\"},"
+                                + "\"taskDTO\":{\"id\":1,\"title\":\"***\"}}"))
                 .andRespond(withSuccess());
 
         anonymizerService.updateUserAndTask(userId, taskId);
