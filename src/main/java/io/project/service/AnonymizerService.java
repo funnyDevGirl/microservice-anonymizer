@@ -4,7 +4,7 @@ import io.project.dto.tasks.TaskCreateDTO;
 import io.project.dto.tasks.TaskDTO;
 import io.project.dto.users.UserCreateDTO;
 import io.project.dto.users.UserDTO;
-import io.project.dto.userstasks.UserTaskDTO;
+import io.project.dto.userstasks.UserWithTaskDTO;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -55,11 +55,15 @@ public class AnonymizerService {
         userDTO.setLastName("***");
         taskDTO.setTitle("***");
 
-        UserTaskDTO userTaskDTO = new UserTaskDTO();
-        userTaskDTO.setUserDTO(userDTO);
+        UserWithTaskDTO userTaskDTO = new UserWithTaskDTO();
+        userTaskDTO.setId(userDTO.getId());
+        userTaskDTO.setEmail(userDTO.getEmail());
+        userTaskDTO.setFirstName(userDTO.getFirstName());
+        userTaskDTO.setLastName("***");
         userTaskDTO.setTaskDTO(taskDTO);
         // update
-        restTemplate.put("http://localhost:8080/update/usertask", userTaskDTO);
+        restTemplate.put("http://localhost:8080/user/{userId}/task/{taskId}",
+                userTaskDTO, userId, taskId);
 
         ResponseEntity.ok().build();
     }

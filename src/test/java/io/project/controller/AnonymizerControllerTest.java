@@ -3,9 +3,10 @@ package io.project.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.test.web.client.ExpectedCount.once;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
-
 import io.project.dto.tasks.TaskCreateDTO;
 import io.project.dto.users.UserCreateDTO;
 import io.project.service.AnonymizerService;
@@ -17,6 +18,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
+
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class AnonymizerControllerTest {
@@ -86,10 +88,10 @@ public class AnonymizerControllerTest {
                         MediaType.APPLICATION_JSON));
 
         // Настройка mock-сервера для обновления usertask
-        mockServer.expect(once(), requestTo("http://localhost:8080/update/usertask"))
+        mockServer.expect(once(), requestTo("http://localhost:8080/user/1/task/1"))
                 .andExpect(method(PUT))
                 .andExpect(content().json(
-                        "{\"userDTO\":{\"id\":1,\"lastName\":\"***\"},"
+                        "{\"id\":1,\"lastName\":\"***\","
                                 + "\"taskDTO\":{\"id\":1,\"title\":\"***\"}}"))
                 .andRespond(withSuccess());
 
