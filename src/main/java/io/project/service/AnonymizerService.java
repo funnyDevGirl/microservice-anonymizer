@@ -24,7 +24,7 @@ public class AnonymizerService {
         dto.setEmail("UsersEmail@ya.ru");
         dto.setPassword("password");
         return restTemplate.postForObject(
-                "http://localhost:8080/create/user", dto, UserCreateDTO.class);
+                "http://localhost:8080/api/create/user", dto, UserCreateDTO.class);
     }
 
     public TaskCreateDTO createTask() {
@@ -33,17 +33,17 @@ public class AnonymizerService {
         dto.setContent("GeneratedContent");
         dto.setStatus("draft");
         return restTemplate.postForObject(
-                "http://localhost:8080/create/task", dto, TaskCreateDTO.class);
+                "http://localhost:8080/api/create/task", dto, TaskCreateDTO.class);
     }
 
     public UserDTO getUserById(Long id) {
         return restTemplate.getForObject(
-                "http://localhost:8080/users/{id}", UserDTO.class, id);
+                "http://localhost:8080/api/users/{id}", UserDTO.class, id);
     }
 
     public TaskDTO getTaskById(Long id) {
         return restTemplate.getForObject(
-                "http://localhost:8080/tasks/{id}", TaskDTO.class, id);
+                "http://localhost:8080/api/tasks/{id}", TaskDTO.class, id);
     }
 
     public void updateUserAndTask(Long userId, Long taskId) {
@@ -62,7 +62,7 @@ public class AnonymizerService {
         userTaskDTO.setLastName("***");
         userTaskDTO.setTaskDTO(taskDTO);
         // update
-        restTemplate.put("http://localhost:8080/user/{userId}/task/{taskId}",
+        restTemplate.put("http://localhost:8080/api/user/{userId}/task/{taskId}",
                 userTaskDTO, userId, taskId);
 
         ResponseEntity.ok().build();

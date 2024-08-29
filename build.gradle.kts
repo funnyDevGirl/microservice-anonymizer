@@ -88,3 +88,9 @@ tasks.jacocoTestReport {
 		xml.required.set(true)
 	}
 }
+
+tasks.register<JavaExec>("runAnonymizerApp") {
+	classpath = sourceSets.main.get().runtimeClasspath
+	mainClass.set("io.project.Application")
+	args("--server.port=8081")
+}
